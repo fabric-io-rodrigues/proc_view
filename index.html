@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizador de Processo</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --panel:#ffffff;
+      --panel-2:#f8fafc;
+      --panel-3:#f3f6fa;
+      --text:#132033;
+      --muted:#607086;
+      --line:#dbe4f0;
+      --line-2:#e8eef5;
+      --accent:#1f6feb;
+      --accent-soft:#eaf2ff;
+      --success:#146c43;
+      --success-soft:#e8f6ee;
+      --warning:#9a6700;
+      --warning-soft:#fff6dd;
+      --danger:#b42318;
+      --danger-soft:#fdeceb;
+      --shadow:0 8px 22px rgba(16,24,40,.06);
+      --radius:14px;
+      --radius-sm:10px;
+      --font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      font-family:var(--font);
+      background:linear-gradient(180deg,#fafcff 0%,#f4f7fb 100%);
+      color:var(--text);
+      line-height:1.34;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      font-size:14px;
+    }
+
+    .page{
+      width:min(1180px, calc(100% - 14px));
+      margin:8px auto 16px;
+    }
+
+    .hero{
+      background:rgba(255,255,255,.97);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      padding:8px 10px;
+      margin-bottom:8px;
+    }
+
+    .hero-top{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      align-items:center;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(.98rem, 1.8vw, 1.18rem);
+      line-height:1.1;
+      letter-spacing:-.02em;
+    }
+
+    .subtitle{
+      margin:2px 0 0;
+      color:var(--muted);
+      font-size:.76rem;
+      line-height:1.25;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .toolbar{
+      display:grid;
+      grid-template-columns:1.15fr 1fr auto auto auto;
+      gap:8px;
+      margin-top:8px;
+      align-items:end;
+    }
+
+    .control{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+
+    .control label{
+      font-size:.68rem;
+      color:var(--muted);
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    input[type="text"], input[type="search"], input[type="file"]{
+      width:100%;
+      min-height:34px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      color:var(--text);
+      border-radius:10px;
+      padding:0 10px;
+      outline:none;
+      font:inherit;
+      font-size:.9rem;
+      transition:border-color .16s ease, box-shadow .16s ease;
+    }
+
+    input[type="file"]{
+      padding:6px 8px;
+      line-height:1.15;
+    }
+
+    input[type="text"]:focus,
+    input[type="search"]:focus,
+    input[type="file"]:focus{
+      border-color:#a7c6ff;
+      box-shadow:0 0 0 3px rgba(31,111,235,.10);
+    }
+
+    button{
+      appearance:none;
+      border:1px solid var(--line);
+      background:var(--panel);
+      color:var(--text);
+      border-radius:10px;
+      padding:0 11px;
+      min-height:34px;
+      font:inherit;
+      font-size:.86rem;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+      white-space:nowrap;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      border-color:#c7d7ea;
+      box-shadow:0 5px 12px rgba(16,24,40,.06);
+    }
+
+    button.primary{
+      background:linear-gradient(180deg,#2d7cff,#1f6feb);
+      color:#fff;
+      border-color:#1f6feb;
+    }
+
+    button.soft{
+      background:#f8fbff;
+      color:var(--accent);
+      border-color:#cfe0ff;
+    }
+
+    button.ghost{
+      background:#fff;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 9px;
+      border-radius:999px;
+      font-size:.74rem;
+      font-weight:800;
+      white-space:nowrap;
+      border:1px solid transparent;
+    }
+
+    .badge-info{background:var(--accent-soft);color:var(--accent);border-color:#cfe0ff}
+    .badge-success{background:var(--success-soft);color:var(--success);border-color:#c7ead6}
+    .badge-warning{background:var(--warning-soft);color:var(--warning);border-color:#f0dfa6}
+    .badge-danger{background:var(--danger-soft);color:var(--danger);border-color:#f4c9c6}
+    .badge-neutral{background:#f2f4f7;color:#344054;border-color:#e4e7ec}
+
+    .message{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      font-size:.88rem;
+    }
+    .message strong{display:block;margin-bottom:3px}
+    .message.info{background:#f8fbff;border-color:#d8e7ff}
+    .message.warning{background:#fffaf0;border-color:#f5dfae}
+    .message.error{background:#fff5f4;border-color:#f3c7c3}
+
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(0,1fr);
+      gap:8px;
+      align-items:start;
+    }
+
+    .layout.with-summary{
+      grid-template-columns:280px minmax(0,1fr);
+    }
+
+    .card{
+      background:rgba(255,255,255,.98);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-width:0;
+    }
+
+    .card-header{
+      padding:8px 10px;
+      border-bottom:1px solid var(--line-2);
+      display:flex;
+      gap:8px;
+      justify-content:space-between;
+      align-items:center;
+      background:linear-gradient(180deg,#fcfdff,#ffffff);
+    }
+
+    .card-title{
+      margin:0;
+      font-size:.9rem;
+      font-weight:900;
+      letter-spacing:-.01em;
+    }
+
+    .card-subtitle{
+      display:none;
+    }
+
+    .card-body{
+      padding:8px 10px 10px;
+    }
+
+    .summary-card{
+      display:none;
+    }
+    .layout.with-summary .summary-card{
+      display:block;
+    }
+
+    .title-counter{
+      color:var(--muted);
+      font-weight:700;
+      font-size:.82rem;
+      margin-left:4px;
+    }
+
+    .summary-grid{
+      display:grid;
+      gap:6px;
+    }
+
+    .summary-item{
+      padding:7px 8px;
+      border:1px solid var(--line-2);
+      border-radius:10px;
+      background:var(--panel-2);
+    }
+
+    .summary-item-label{
+      display:block;
+      font-size:.64rem;
+      font-weight:900;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:3px;
+    }
+
+    .summary-item-value{
+      font-size:.82rem;
+      line-height:1.28;
+      word-break:break-word;
+    }
+
+    .stack{
+      display:flex;
+      flex-wrap:wrap;
+      gap:5px;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 7px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid var(--line);
+      font-size:.74rem;
+      color:#334155;
+      line-height:1.1;
+    }
+
+    .timeline{
+      position:relative;
+      display:grid;
+      gap:6px;
+    }
+
+    .timeline::before{
+      content:"";
+      position:absolute;
+      left:11px;
+      top:5px;
+      bottom:5px;
+      width:1px;
+      background:#dde7f3;
+    }
+
+    details.movement{
+      position:relative;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 3px 10px rgba(16,24,40,.04);
+    }
+
+    details.movement[hidden]{display:none !important}
+
+    details.movement summary{
+      list-style:none;
+      cursor:pointer;
+      padding:8px 10px 8px 28px;
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      justify-content:space-between;
+      user-select:none;
+    }
+
+    details.movement summary::-webkit-details-marker{display:none}
+
+    .dot{
+      position:absolute;
+      left:6px;
+      top:11px;
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:#fff;
+      border:2px solid #7aa8ff;
+      box-shadow:0 0 0 3px rgba(31,111,235,.10);
+    }
+
+    .movement-main{
+      min-width:0;
+      flex:1;
+    }
+
+    .movement-head{
+      display:flex;
+      align-items:flex-start;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-bottom:2px;
+    }
+
+    .movement-title{
+      font-weight:900;
+      font-size:.9rem;
+      line-height:1.16;
+      letter-spacing:-.01em;
+    }
+
+    .order-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:28px;
+      height:20px;
+      padding:0 8px;
+      border-radius:999px;
+      background:#f5f8fc;
+      border:1px solid var(--line);
+      color:#475467;
+      font-size:.68rem;
+      font-weight:800;
+      line-height:1;
+    }
+
+    .movement-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px 8px;
+      color:var(--muted);
+      font-size:.73rem;
+      line-height:1.25;
+      margin-bottom:3px;
+    }
+
+    .movement-preview{
+      color:#445266;
+      font-size:.79rem;
+      line-height:1.26;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      line-clamp:2;
+    }
+
+    .expander{
+      flex-shrink:0;
+      width:24px;
+      height:24px;
+      display:grid;
+      place-items:center;
+      border-radius:8px;
+      background:#f8fafc;
+      border:1px solid var(--line);
+      color:#334155;
+      font-size:.9rem;
+      transition:transform .18s ease, background .18s ease;
+    }
+
+    details[open] .expander{
+      transform:rotate(180deg);
+      background:#eef5ff;
+    }
+
+    .movement-body{
+      padding:0 10px 8px 28px;
+      border-top:1px solid var(--line-2);
+      background:linear-gradient(180deg,#fff,#fbfdff);
+    }
+
+    .movement-section{
+      padding-top:7px;
+    }
+
+    .section-title{
+      font-size:.66rem;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      color:var(--muted);
+      margin:0 0 5px;
+    }
+
+    .rich-text{
+      background:var(--panel-2);
+      border:1px solid var(--line-2);
+      border-radius:10px;
+      padding:8px 9px;
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-size:.8rem;
+      line-height:1.28;
+    }
+
+    .inline-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(175px,1fr));
+      gap:6px;
+    }
+
+    .inline-list{
+      display:grid;
+      gap:6px;
+    }
+
+    .inline-box{
+      padding:7px 8px;
+      background:var(--panel-2);
+      border:1px solid var(--line-2);
+      border-radius:10px;
+      min-width:0;
+    }
+
+    .inline-box-title{
+      font-weight:900;
+      font-size:.78rem;
+      line-height:1.15;
+      margin-bottom:5px;
+      color:#162232;
+    }
+
+    .inline-box-line{
+      font-size:.77rem;
+      line-height:1.24;
+      margin:3px 0;
+      word-break:break-word;
+    }
+
+    .inline-box-line strong{
+      color:#3d4b60;
+      font-weight:800;
+    }
+
+    .empty{
+      padding:14px 12px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed var(--line);
+      border-radius:12px;
+      background:#fbfcfe;
+      font-size:.84rem;
+    }
+
+    .toolbar-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:.92em;
+    }
+
+    @media (max-width: 1000px){
+      .toolbar{
+        grid-template-columns:1fr 1fr auto auto;
+      }
+      .control.file-control{
+        grid-column:1 / -1;
+      }
+      .layout.with-summary{
+        grid-template-columns:1fr;
+      }
+      .summary-card{
+        display:none;
+      }
+    }
+
+    @media (max-width: 720px){
+      .page{width:min(100% - 8px, 100%)}
+      .hero{padding:7px 8px}
+      .hero-top{grid-template-columns:1fr}
+      .hero-actions{justify-content:flex-start}
+      .toolbar{grid-template-columns:1fr 1fr}
+      .control.file-control{grid-column:1 / -1}
+      .toolbar-actions{grid-column:1 / -1}
+      .card-header,.card-body{padding-left:8px;padding-right:8px}
+      details.movement summary{padding:8px 8px 8px 25px}
+      .movement-body{padding:0 8px 8px 25px}
+      .timeline::before{left:9px}
+      .dot{left:4px}
+      .inline-grid{grid-template-columns:1fr}
+      .toolbar-actions button{flex:1}
+    }
+
+    @media print{
+      body{
+        background:#fff !important;
+        font-size:11px;
+        color:#000;
+      }
+      .page{
+        width:100%;
+        margin:0;
+      }
+      .hero{
+        box-shadow:none;
+        border:1px solid #d0d7de;
+        border-radius:0;
+        margin-bottom:8px;
+      }
+      .toolbar,
+      #messageHost,
+      #expandAllBtn,
+      #collapseAllBtn,
+      #clearFilterBtn,
+      #summaryToggleBtn,
+      #openProcBtn,
+      #retryBtn,
+      #fileInput,
+      label[for="fileInput"]{
+        display:none !important;
+      }
+      .layout,
+      .layout.with-summary{
+        display:block;
+      }
+      .summary-card{
+        display:block !important;
+        margin-bottom:8px;
+        box-shadow:none;
+      }
+      .card,
+      details.movement{
+        box-shadow:none;
+        border-color:#d5dde6;
+      }
+      details.movement{
+        break-inside:avoid;
+        page-break-inside:avoid;
+        margin-bottom:6px;
+      }
+      details.movement .movement-body{
+        display:block !important;
+      }
+      .timeline::before{display:none}
+      .dot{display:none}
+      .hero-actions .badge{
+        border-color:#d5dde6;
+      }
+      .expander{display:none}
+      .inline-box,
+      .summary-item,
+      .rich-text{
+        background:#fff;
+      }
+      .movement-preview{
+        -webkit-line-clamp:unset;
+        display:block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1 id="pageTitle">Carregando processo…</h1>
+          <p id="pageSubtitle" class="subtitle">Use <code>#proc=</code> ou abra um JSON manualmente.</p>
+        </div>
+        <div class="hero-actions" id="statusBadges"></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="control">
+          <label for="procInput">Processo</label>
+          <input id="procInput" type="text" placeholder="xxxxxxx-xx.2026.8.19.xxxx" />
+        </div>
+        <div class="control">
+          <label for="filterInput">Filtro</label>
+          <input id="filterInput" type="search" placeholder="Buscar em movimentos, partes, juiz, texto..." />
+        </div>
+        <div class="control file-control">
+          <label for="fileInput">Abrir JSON manualmente</label>
+          <input id="fileInput" type="file" accept=".json,application/json" />
+        </div>
+        <div class="control">
+          <label>&nbsp;</label>
+          <button id="openProcBtn" class="primary" type="button">Abrir</button>
+        </div>
+        <div class="control">
+          <label>&nbsp;</label>
+          <button id="retryBtn" class="ghost" type="button">Recarregar</button>
+        </div>
+      </div>
+
+      <div id="messageHost"></div>
+    </section>
+
+    <main id="layout" class="layout with-summary">
+      <section id="summaryCard" class="card summary-card">
+        <div class="card-header">
+          <h2 class="card-title">Resumo</h2>
+        </div>
+        <div class="card-body">
+          <div id="summaryContent" class="summary-grid">
+            <div class="empty">Nenhum processo carregado ainda.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Movimentos <span id="movementsCounter" class="title-counter">0/0</span></h2>
+          <div class="toolbar-actions">
+            <button id="summaryToggleBtn" class="ghost" type="button">Ocultar resumo</button>
+            <button id="expandAllBtn" class="soft" type="button">Expandir</button>
+            <button id="collapseAllBtn" class="ghost" type="button">Recolher</button>
+            <button id="clearFilterBtn" class="ghost" type="button">Limpar filtro</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="movementsHost" class="timeline">
+            <div class="empty">Carregue um processo para visualizar os movimentos.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <script>
+    const state = {
+      data: null,
+      filterText: '',
+      summaryCollapsed: false,
+      beforePrintOpen: [],
+      beforePrintSummaryCollapsed: false
+    };
+
+    const el = {
+      layout: document.getElementById('layout'),
+      summaryCard: document.getElementById('summaryCard'),
+      summaryToggleBtn: document.getElementById('summaryToggleBtn'),
+      pageTitle: document.getElementById('pageTitle'),
+      pageSubtitle: document.getElementById('pageSubtitle'),
+      statusBadges: document.getElementById('statusBadges'),
+      procInput: document.getElementById('procInput'),
+      filterInput: document.getElementById('filterInput'),
+      fileInput: document.getElementById('fileInput'),
+      openProcBtn: document.getElementById('openProcBtn'),
+      retryBtn: document.getElementById('retryBtn'),
+      messageHost: document.getElementById('messageHost'),
+      summaryContent: document.getElementById('summaryContent'),
+      movementsCounter: document.getElementById('movementsCounter'),
+      movementsHost: document.getElementById('movementsHost'),
+      expandAllBtn: document.getElementById('expandAllBtn'),
+      collapseAllBtn: document.getElementById('collapseAllBtn'),
+      clearFilterBtn: document.getElementById('clearFilterBtn')
+    };
+
+    function escapeHtml(value){
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function cleanText(value){
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .replace(/\u00a0/g, ' ')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
+    }
+
+    function hasValue(value){
+      if (value === null || value === undefined) return false;
+      if (typeof value === 'string') return cleanText(value) !== '';
+      if (Array.isArray(value)) return value.length > 0;
+      return true;
+    }
+
+    function safeArray(value){
+      return Array.isArray(value) ? value : [];
+    }
+
+    function uniqueStrings(values){
+      return [...new Set(safeArray(values).map(cleanText).filter(Boolean))];
+    }
+
+    function setProcHash(proc) {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      params.set('proc', proc);
+      history.replaceState(null, '', `${window.location.pathname}#${params.toString()}`);
+    }
+
+    function getHashParam(name) {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      return params.get(name) || '';
+    }
+
+    function getQueryParam(name){
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name) || '';
+    }
+
+    function buildDataPath(proc){
+      return `./data/data_${proc}.json`;
+    }
+
+    function pushMessage(type, title, text){
+      el.messageHost.innerHTML = `
+        <div class="message ${escapeHtml(type)}">
+          <strong>${escapeHtml(title)}</strong>
+          <div>${escapeHtml(text)}</div>
+        </div>
+      `;
+    }
+
+    function clearMessage(){
+      el.messageHost.innerHTML = '';
+    }
+
+    function formatBoolFlag(value){
+      if (value === 'S' || value === 'sim' || value === 'Sim' || value === true) return 'Sim';
+      if (value === 'N' || value === 'não' || value === 'Nao' || value === 'Não' || value === false) return 'Não';
+      return hasValue(value) ? String(value) : '';
+    }
+
+    function summarizeStatus(data){
+      const text = cleanText(data.descSit) || cleanText(data.descrLocal) || (hasValue(data.sitProc) ? `Situação ${data.sitProc}` : 'Sem status informado');
+      const lower = text.toLowerCase();
+      let cls = 'badge-info';
+      if (lower.includes('arquiv')) cls = 'badge-neutral';
+      else if (lower.includes('aguard') || lower.includes('conclus')) cls = 'badge-warning';
+      else if (lower.includes('pris') || lower.includes('urgente')) cls = 'badge-danger';
+      else if (lower.includes('andamento') || lower.includes('ativo')) cls = 'badge-success';
+      return { text, cls };
+    }
+
+    function renderBadges(data){
+      const badges = [];
+      const status = summarizeStatus(data);
+      badges.push(`<span class="badge ${status.cls}">${escapeHtml(status.text)}</span>`);
+      if (hasValue(data.formaConsulta)) badges.push(`<span class="badge badge-neutral">${escapeHtml(data.formaConsulta)}</span>`);
+      if (data.indSegrJust === 'S' || data.indSigilo === 'S') {
+        badges.push(`<span class="badge badge-danger">Sigilo</span>`);
+      }
+      el.statusBadges.innerHTML = badges.join('');
+    }
+
+    function renderTags(values){
+      const items = uniqueStrings(values);
+      if (!items.length) return '';
+      return `<div class="stack">${items.map(item => `<span class="tag">${escapeHtml(item)}</span>`).join('')}</div>`;
+    }
+
+    function renderSummaryList(items){
+      const valid = items.filter(item => hasValue(item.value));
+      if (!valid.length) return '<div class="empty">Sem campos resumidos disponíveis neste arquivo.</div>';
+      return valid.map(item => `
+        <div class="summary-item">
+          <span class="summary-item-label">${escapeHtml(item.label)}</span>
+          <div class="summary-item-value">${item.html ? item.value : escapeHtml(item.value)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderSummary(data){
+      const personagens = safeArray(data.personagens).map(p => {
+        const nome = cleanText(p.nome);
+        const papel = cleanText(p.descPers);
+        const polo = cleanText(p.tipoPolo);
+        return [nome, papel ? `— ${papel}` : '', polo ? `(${polo})` : ''].join(' ').trim();
+      });
+
+      const advogados = safeArray(data.advogados).map(a => [cleanText(a.nomeAdv), cleanText(a.numOab)].filter(Boolean).join(' · '));
+
+      const mandados = safeArray(data.mandado).map(m => {
+        const partes = [
+          cleanText(m.numDoc),
+          cleanText(m.nomeTipoMandado),
+          cleanText(m.descricaoResultadoMandado),
+          cleanText(m.recebimentoOJA) ? `Receb. OJA ${cleanText(m.recebimentoOJA)}` : '',
+          cleanText(m.devolucaoOJA) ? `Dev. OJA ${cleanText(m.devolucaoOJA)}` : ''
+        ].filter(Boolean);
+        return partes.join(' · ');
+      });
+
+      const segInst = safeArray(data.segundaInstProc).map(p => [cleanText(p.codCnj), cleanText(p.codProc)].filter(Boolean).join(' · '));
+      const segProt = safeArray(data.segundaInstProt).map(p => [cleanText(p.numProtocolo), cleanText(p.dt)].filter(Boolean).join(' · '));
+
+      const audiencia = data.audiencia && typeof data.audiencia === 'object'
+        ? [
+            cleanText(data.audiencia.descr),
+            [cleanText(data.audiencia.dtAud), cleanText(data.audiencia.hrAud)].filter(Boolean).join(' às ')
+          ].filter(Boolean).join(' · ')
+        : '';
+
+      const endereco = [cleanText(data.rua), cleanText(data.numero), cleanText(data.bairro), cleanText(data.cidade), cleanText(data.cep)].filter(Boolean).join(', ');
+      const ultimoMov = data.ultMovimentoProc
+        ? [cleanText(data.ultMovimentoProc.descrMov), cleanText(data.ultMovimentoProc.dtMovimento || data.ultMovimentoProc.dt)].filter(Boolean).join(' · ')
+        : '';
+
+      el.summaryContent.innerHTML = renderSummaryList([
+        { label: 'Número CNJ', value: data.codCnj },
+        { label: 'Número interno', value: data.codProc },
+        { label: 'Tipo / rito', value: data.descRito },
+        { label: 'Serventia / vara', value: [cleanText(data.descServ), cleanText(data.descVara)].filter(Boolean).join(' — ') },
+        { label: 'Comarca', value: data.nome },
+        { label: 'Competência', value: data.descrComp },
+        { label: 'Assunto', value: data.txtAssunto },
+        { label: 'Distribuição', value: data.dataDis },
+        { label: 'Situação', value: data.descSit || data.descrLocal || data.sitProc },
+        { label: 'Último movimento', value: ultimoMov },
+        { label: 'Endereço da serventia', value: endereco },
+        { label: 'Consulta', value: data.dataHoraConsulta },
+        { label: 'Segredo de justiça', value: formatBoolFlag(data.indSegrJust) },
+        { label: 'Sigilo', value: formatBoolFlag(data.indSigilo) },
+        { label: 'Personagens', value: renderTags(personagens), html: true },
+        { label: 'Advogados', value: renderTags(advogados), html: true },
+        { label: 'Audiência', value: audiencia },
+        { label: 'Mandados', value: renderTags(mandados), html: true },
+        { label: '2ª instância', value: renderTags(segInst), html: true },
+        { label: 'Protocolo 2ª instância', value: renderTags(segProt), html: true }
+      ]);
+    }
+
+    function movementTitle(mov){
+      return cleanText(mov.descrMov)
+        || cleanText(mov.descAudiencia)
+        || cleanText(mov.descDistribuicao)
+        || cleanText(safeArray(mov.movimentosExibicao)[0]?.tipoMovimento)
+        || 'Movimento sem título';
+    }
+
+    function movementDate(mov){
+      return cleanText(mov.dtMovimento)
+        || cleanText(mov.dtAlt)
+        || cleanText(mov.dt)
+        || cleanText(mov.dtAtualizacao)
+        || cleanText(mov.dtJuntada)
+        || cleanText(mov.dtRemessa)
+        || cleanText(mov.dtConclusao)
+        || '';
+    }
+
+    function movementPreview(mov){
+      const candidates = [
+        mov.descResumida,
+        mov.resultado,
+        mov.descrAto,
+        mov.descricao,
+        mov.textoAudiencia,
+        mov.descrTipMov,
+        safeArray(mov.textosVinculadosProc).map(t => [t.descr, t.numDoc, t.nomeDestinatario].filter(Boolean).join(' · ')).join(' | ')
+      ];
+      const found = candidates.map(cleanText).find(Boolean);
+      return found || 'Toque para ver os detalhes.';
+    }
+
+    function buildMovementSearchBlob(mov){
+      const parts = [
+        movementTitle(mov),
+        movementDate(mov),
+        movementPreview(mov),
+        cleanText(mov.descrTipAto),
+        cleanText(mov.descrAto),
+        cleanText(mov.descrTipMov),
+        cleanText(mov.nomeJuiz),
+        cleanText(mov.nomeDestinatario),
+        cleanText(mov.resultado),
+        cleanText(mov.descAudiencia),
+        cleanText(mov.local),
+        cleanText(mov.serventia),
+        cleanText(mov.personagem?.nome),
+        cleanText(mov.personagem?.descPers),
+        ...safeArray(mov.intimados).map(i => cleanText(i.nomeIntimado)),
+        ...safeArray(mov.movimentosExibicao).flatMap(ex => [
+          cleanText(ex.tipoMovimento),
+          ...safeArray(ex.detalhesMovimento).flatMap(d => [cleanText(d.codigo), cleanText(d.descricao)]),
+          cleanText(ex.resumoOuIntegra)
+        ]),
+        ...safeArray(mov.textosVinculadosProc).flatMap(t => [
+          cleanText(t.descr),
+          cleanText(t.numDoc),
+          cleanText(t.nomeDestinatario)
+        ])
+      ];
+      return cleanText(parts.join(' ')).toLowerCase();
+    }
+
+    function buildLine(key, value){
+      if (!hasValue(value)) return '';
+      return `<div class="inline-box-line"><strong>${escapeHtml(key)}</strong> ${escapeHtml(value)}</div>`;
+    }
+
+    function renderPrimaryBox(mov, date){
+      const html = [
+        buildLine('Data:', date),
+        buildLine('Tipo de ato:', mov.descrTipAto),
+        buildLine('Ato:', mov.descrAto),
+        buildLine('Tipo de movimento:', mov.descrTipMov),
+        buildLine('Código:', mov.codTipMov),
+        buildLine('Juiz:', mov.nomeJuiz),
+        buildLine('Destino:', mov.nomeDestinatario),
+        buildLine('Prazo:', mov.prazo),
+        buildLine('Resultado:', mov.resultado),
+        buildLine('Audiência:', mov.descAudiencia),
+        buildLine('Hora:', mov.horaAudiencia),
+        buildLine('Gravado:', typeof mov.gravado === 'boolean' ? (mov.gravado ? 'Sim' : 'Não') : ''),
+        buildLine('Local:', mov.local),
+        buildLine('Distribuição:', mov.descDistribuicao),
+        buildLine('Serventia:', mov.serventia),
+        buildLine('Publicação:', mov.indPublicado),
+        buildLine('Expediente:', mov.publicado?.dtExp),
+        buildLine('Publicação prevista:', mov.publicado?.dtPubPrev),
+        buildLine('Personagem:', [cleanText(mov.personagem?.nome), cleanText(mov.personagem?.descPers)].filter(Boolean).join(' · '))
+      ].filter(Boolean).join('');
+
+      if (!html) return '';
+      return `
+        <div class="inline-box">
+          <div class="inline-box-title">Dados principais</div>
+          ${html}
+        </div>
+      `;
+    }
+
+    function renderMovementExhibitionBoxes(mov){
+      const exib = safeArray(mov.movimentosExibicao);
+      if (!exib.length) return '';
+      return exib.map(item => {
+        const lines = safeArray(item.detalhesMovimento).map(det => buildLine(cleanText(det.codigo) || 'Detalhe:', cleanText(det.descricao))).filter(Boolean).join('')
+          || '<div class="inline-box-line">Sem detalhes adicionais.</div>';
+        return `
+          <div class="inline-box">
+            <div class="inline-box-title">${escapeHtml(cleanText(item.tipoMovimento) || 'Movimento')}</div>
+            ${lines}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderIntimadosBox(mov){
+      const list = uniqueStrings(safeArray(mov.intimados).map(item => item.nomeIntimado));
+      if (!list.length) return '';
+      return `
+        <div class="inline-box">
+          <div class="inline-box-title">Intimados / destinatários</div>
+          ${list.map(name => `<div class="inline-box-line">${escapeHtml(name)}</div>`).join('')}
+        </div>
+      `;
+    }
+
+    function renderLinkedTextsBoxes(mov){
+      const allTexts = [
+        ...safeArray(mov.textosVinculadosProc),
+        ...safeArray(mov.movimentosExibicao).flatMap(ex => safeArray(ex.textosVinculadosProc))
+      ].filter(item => item && typeof item === 'object');
+
+      if (!allTexts.length) return '';
+
+      return allTexts.map(item => `
+        <div class="inline-box">
+          <div class="inline-box-title">${escapeHtml(cleanText(item.descr) || 'Texto vinculado')}</div>
+          ${[
+            buildLine('Documento:', item.numDoc),
+            buildLine('Destinatário:', item.nomeDestinatario),
+            buildLine('Receb. OJA:', item.dataRecebOJA),
+            buildLine('Dev. OJA:', item.dataDevolOJA)
+          ].filter(Boolean).join('')}
+        </div>
+      `).join('');
+    }
+
+    function renderCompactBoxes(mov, date){
+      const boxes = [
+        renderPrimaryBox(mov, date),
+        renderMovementExhibitionBoxes(mov),
+        renderIntimadosBox(mov),
+        renderLinkedTextsBoxes(mov)
+      ].filter(Boolean).join('');
+      if (!boxes) return '';
+      return `
+        <div class="movement-section">
+          <h4 class="section-title">Campos do movimento</h4>
+          <div class="inline-grid">${boxes}</div>
+        </div>
+      `;
+    }
+
+    function renderMovement(mov, index){
+      const title = movementTitle(mov);
+      const date = movementDate(mov);
+      const preview = movementPreview(mov);
+      const order = hasValue(mov.ordem) ? `#${mov.ordem}` : `Item ${index + 1}`;
+      const richText = cleanText(mov.descricao) || cleanText(mov.textoAudiencia) || cleanText(mov.descResumida) || '';
+
+      return `
+        <details class="movement" data-search="${escapeHtml(buildMovementSearchBlob(mov))}">
+          <summary>
+            <span class="dot" aria-hidden="true"></span>
+            <div class="movement-main">
+              <div class="movement-head">
+                <span class="movement-title">${escapeHtml(title)}</span>
+                <span class="order-pill">${escapeHtml(order)}</span>
+              </div>
+              <div class="movement-meta">
+                ${date ? `<span>${escapeHtml(date)}</span>` : ''}
+                ${cleanText(mov.nomeJuiz) ? `<span>Juiz: ${escapeHtml(cleanText(mov.nomeJuiz))}</span>` : ''}
+                ${cleanText(mov.nomeDestinatario) ? `<span>Destino: ${escapeHtml(cleanText(mov.nomeDestinatario))}</span>` : ''}
+              </div>
+              <div class="movement-preview">${escapeHtml(preview)}</div>
+            </div>
+            <span class="expander" aria-hidden="true">⌄</span>
+          </summary>
+          <div class="movement-body">
+            ${richText ? `
+              <div class="movement-section">
+                <h4 class="section-title">Resumo</h4>
+                <div class="rich-text">${escapeHtml(richText)}</div>
+              </div>
+            ` : ''}
+            ${renderCompactBoxes(mov, date)}
+          </div>
+        </details>
+      `;
+    }
+
+    function updateVisibleCount(){
+      const all = [...el.movementsHost.querySelectorAll('details.movement')];
+      const visible = all.filter(item => !item.hidden);
+      el.movementsCounter.textContent = `${visible.length}/${all.length}`;
+
+      if (all.length && visible.length === 0){
+        if (!document.getElementById('noMatchBox')){
+          const div = document.createElement('div');
+          div.className = 'empty';
+          div.id = 'noMatchBox';
+          div.textContent = 'Nenhum movimento corresponde ao filtro atual.';
+          el.movementsHost.appendChild(div);
+        }
+      } else {
+        document.getElementById('noMatchBox')?.remove();
+      }
+    }
+
+    function applyFilter(){
+      const term = cleanText(state.filterText).toLowerCase();
+      const items = [...el.movementsHost.querySelectorAll('details.movement')];
+      items.forEach(item => {
+        const blob = item.dataset.search || '';
+        item.hidden = term && !blob.includes(term);
+      });
+      updateVisibleCount();
+    }
+
+    function renderMovements(data){
+      const movements = safeArray(data.movimentosProc);
+      if (!movements.length){
+        el.movementsHost.innerHTML = '<div class="empty">Este JSON não possui itens em <code>movimentosProc</code>.</div>';
+        updateVisibleCount();
+        return;
+      }
+      el.movementsHost.innerHTML = movements.map(renderMovement).join('');
+      applyFilter();
+    }
+
+    function buildSubtitle(data){
+      const parts = [
+        cleanText(data.descRito),
+        cleanText(data.descServ) || cleanText(data.descVara),
+        cleanText(data.nome)
+      ].filter(Boolean);
+      return parts.join(' • ') || 'Processo';
+    }
+
+    function setSummaryCollapsed(collapsed){
+      state.summaryCollapsed = !!collapsed;
+      el.layout.classList.toggle('with-summary', !state.summaryCollapsed);
+      el.summaryToggleBtn.textContent = state.summaryCollapsed ? 'Mostrar resumo' : 'Ocultar resumo';
+      if (window.innerWidth <= 1000 && !state.summaryCollapsed) {
+        el.layout.classList.remove('with-summary');
+      }
+      if (window.innerWidth <= 1000 && state.summaryCollapsed) {
+        el.layout.classList.remove('with-summary');
+      }
+      if (window.innerWidth > 1000 && !state.summaryCollapsed) {
+        el.layout.classList.add('with-summary');
+      }
+    }
+
+    function setLoadedState(data){
+      state.data = data;
+      const title = cleanText(data.codCnj) || cleanText(data.codProc) || 'Processo sem número identificado';
+      el.pageTitle.textContent = title;
+      el.pageSubtitle.textContent = buildSubtitle(data);
+      el.procInput.value = cleanText(data.codCnj) || '';
+      renderBadges(data);
+      renderSummary(data);
+      renderMovements(data);
+      clearMessage();
+    }
+
+    function normalizeRootData(parsed){
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('O arquivo não contém um objeto JSON raiz válido.');
+      }
+      return parsed;
+    }
+
+    async function loadProcessByNumber(proc){
+      const trimmed = cleanText(proc);
+      if (!trimmed){
+        pushMessage('info', 'Informe um processo', 'Use o parâmetro \'#proc=NUMERO_DO_PROCESSO\' ou preencha o campo acima para abrir o JSON correspondente.');
+        return;
+      }
+
+      const path = buildDataPath(trimmed);
+
+      try{
+        const response = await fetch(path, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+        setLoadedState(normalizeRootData(json));
+      }catch(error){
+        console.error(error);
+        pushMessage('error', 'Não foi possível carregar automaticamente', `Falha ao abrir ${path}. Confira o nome do arquivo, o parâmetro <code>#proc=</code> e, se estiver usando file://, use a abertura manual do JSON.`);
+        el.pageTitle.textContent = 'Falha no carregamento';
+        el.pageSubtitle.textContent = 'Use a abertura manual do JSON ou confira o caminho do arquivo.';
+        el.statusBadges.innerHTML = '<span class="badge badge-danger">Erro de carregamento</span>';
+        el.summaryContent.innerHTML = '<div class="empty">Nenhum resumo disponível.</div>';
+        el.movementsHost.innerHTML = '<div class="empty">Nenhum movimento disponível porque o processo não foi carregado.</div>';
+        updateVisibleCount();
+      }
+    }
+
+    async function loadManualFile(file){
+      if (!file) return;
+      try{
+        const text = await file.text();
+        const json = JSON.parse(text);
+        setLoadedState(normalizeRootData(json));
+      }catch(error){
+        console.error(error);
+        pushMessage('error', 'JSON inválido', 'Não foi possível interpretar o arquivo selecionado. Confira se ele é um JSON válido exportado pelo sistema.');
+      }
+    }
+
+    function openFromInput(){
+      const proc = cleanText(el.procInput.value);
+      if (!proc){
+        pushMessage('warning', 'Número ausente', 'Preencha o número do processo antes de tentar abrir o arquivo local.');
+        el.procInput.focus();
+        return;
+      }
+      setProcHash(proc);
+      loadProcessFromCloudfareKV(proc);
+    }
+
+    function expandAll(open){
+      [...el.movementsHost.querySelectorAll('details.movement:not([hidden])')].forEach(item => {
+        item.open = open;
+      });
+    }
+
+    function handleBeforePrint(){
+      state.beforePrintOpen = [...el.movementsHost.querySelectorAll('details.movement')].map(item => item.open);
+      state.beforePrintSummaryCollapsed = state.summaryCollapsed;
+      setSummaryCollapsed(false);
+      expandAll(true);
+    }
+
+    function handleAfterPrint(){
+      const items = [...el.movementsHost.querySelectorAll('details.movement')];
+      items.forEach((item, idx) => item.open = !!state.beforePrintOpen[idx]);
+      setSummaryCollapsed(state.beforePrintSummaryCollapsed);
+    }
+
+    async function loadProcessFromCloudfareKV(proc){
+      const md5_key = md5(proc);
+
+      const resp = await fetch("http://visualizador-api.fabricio-rhs-b2a.workers.dev/kv/" + md5_key, { cache: 'no-store'  });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const base64 = await resp.text();
+
+      const zip = await JSZip.loadAsync(base64, { base64: true });
+      const nomeArquivo = Object.keys(zip.files).find(n => !zip.files[n].dir);
+      const texto = await zip.files[nomeArquivo].async("string");
+
+      const json = JSON.parse(texto);
+      setLoadedState(normalizeRootData(json));
+    }
+
+    function initEvents(){
+      el.openProcBtn.addEventListener('click', openFromInput);
+      el.retryBtn.addEventListener('click', () => {
+        const proc = getHashParam('proc') || cleanText(el.procInput.value);
+        loadProcessFromCloudfareKV(proc);
+      });
+
+      el.procInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') openFromInput();
+      });
+
+      el.filterInput.addEventListener('input', () => {
+        state.filterText = el.filterInput.value || '';
+        applyFilter();
+      });
+
+      el.clearFilterBtn.addEventListener('click', () => {
+        el.filterInput.value = '';
+        state.filterText = '';
+        applyFilter();
+      });
+
+      el.expandAllBtn.addEventListener('click', () => expandAll(true));
+      el.collapseAllBtn.addEventListener('click', () => expandAll(false));
+      el.summaryToggleBtn.addEventListener('click', () => setSummaryCollapsed(!state.summaryCollapsed));
+
+      el.fileInput.addEventListener('change', (event) => {
+        const file = event.target.files && event.target.files[0];
+        loadManualFile(file);
+      });
+
+      window.addEventListener('beforeprint', handleBeforePrint);
+      window.addEventListener('afterprint', handleAfterPrint);
+      window.addEventListener('resize', () => {
+        if (window.innerWidth <= 1000) {
+          el.layout.classList.remove('with-summary');
+        } else if (!state.summaryCollapsed) {
+          el.layout.classList.add('with-summary');
+        }
+      });
+    }
+
+    function init(){
+      initEvents();
+      setSummaryCollapsed(window.innerWidth <= 1000);
+
+      const proc = getHashParam('proc');
+      if (proc){
+        el.procInput.value = proc;
+
+        //loadProcessByNumber(proc);
+        loadProcessFromCloudfareKV(proc);
+
+      } else {
+        pushMessage('info', 'Nenhum processo informado', 'Abra este HTML com \'#proc=NUMERO_DO_PROCESSO\'.');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
